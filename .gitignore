@@ -38,6 +38,10 @@ secrets.properties
 .env.local
 .env.*.local
 
+### 빌드 산출물 ###
+# 프론트 빌드 결과는 Dockerfile 이 여기에 넣는다. 저장소에는 담지 않는다.
+src/main/resources/static/
+
 ### Frontend (Vue + Vite) ###
 frontend/node_modules/
 frontend/dist/

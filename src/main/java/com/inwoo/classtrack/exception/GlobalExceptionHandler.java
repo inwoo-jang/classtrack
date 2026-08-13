@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
 import java.util.List;
@@ -60,6 +61,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(new ErrorResponse(
                 Instant.now(), HttpStatus.BAD_REQUEST.value(), "Bad Request",
                 summary, request.getRequestURI(), all));
+    }
+
+    /**
+     * 존재하지 않는 경로 → 404.
+     *
+     * <p>이걸 따로 잡지 않으면 아래 Exception 핸들러가 받아서 500 이 된다.
+     * 없는 주소를 부른 건 서버 잘못이 아니다.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResource(
+            NoResourceFoundException e, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponse.of(
+                HttpStatus.NOT_FOUND.value(), "Not Found",
+                "요청한 경로를 찾을 수 없습니다.", request.getRequestURI()));
     }
 
     /** 그 밖의 잘못된 인자 → 400 */

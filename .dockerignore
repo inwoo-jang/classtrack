@@ -1,0 +1,19 @@
+# 이미지에 들어갈 필요가 없는 것들.
+# 특히 secrets.properties 는 절대 이미지에 굽지 않는다 — 환경변수로 주입한다.
+
+secrets.properties
+.env
+.env.*
+
+target/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+.git/
+.github/
+.vscode/
+.idea/
+
+*.md
+!README.md
