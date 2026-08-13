@@ -1,0 +1,69 @@
+# ============================================================
+# 모든 환경에 공통으로 적용되는 설정.
+# 환경별 차이는 application-{profile}.yaml 에서 덮어쓴다.
+#
+#   local : 개발용 (기본값)
+#   prod  : 운영용
+#
+# 실제 크리덴셜은 여기 두지 않는다. 프로젝트 루트의 secrets.properties
+# (gitignore 대상) 또는 환경변수로 주입한다.
+# ============================================================
+
+spring:
+  application:
+    name: classtrack
+
+  profiles:
+    # -Dspring.profiles.active 를 주지 않으면 local 로 뜬다
+    default: local
+
+  config:
+    # 없으면 조용히 넘어가고 환경변수로 대체된다
+    import: "optional:file:./secrets.properties"
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    # 영속성 컨텍스트를 뷰 렌더링까지 열어두지 않는다 (커넥션 점유 방지)
+    open-in-view: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# ------------------------------------------------------------
+# 수업일 계산용 휴일. 주말은 코드에서 처리하므로 여기엔 공휴일만 적는다.
+# durationDays 는 이 날들을 세지 않는다.
+#
+# ※ 음력 기반 공휴일(설날·추석·부처님오신날)과 대체공휴일은 직접 채워야 한다.
+#    아래는 날짜가 고정된 것만 넣어둔 상태다.
+# ------------------------------------------------------------
+app:
+  # 과목 추천 목록. enum 이 아니라 "제안"이므로 여기 없는 값도 입력할 수 있고,
+  # 한 번 쓰인 과목명은 DB 에서 읽어 자동으로 목록에 합쳐진다.
+  subjects:
+    - Software Engineering
+    - Data Analytics
+    - Machine Learning
+    - LLM Engineering
+    - Generative AI
+    - AI Agent
+    - Cloud DevOps
+    - Project & Career
+
+  calendar:
+    holidays:
+      - 2026-01-01   # 신정
+      - 2026-03-01   # 삼일절
+      - 2026-05-05   # 어린이날
+      - 2026-06-06   # 현충일
+      - 2026-08-15   # 광복절
+      - 2026-10-03   # 개천절
+      - 2026-10-09   # 한글날
+      - 2026-12-25   # 성탄절

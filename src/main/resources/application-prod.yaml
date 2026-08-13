@@ -1,0 +1,32 @@
+# ============================================================
+# 운영 환경. local 과 반대로 "덜 드러내는" 쪽으로 설정한다.
+# ============================================================
+
+server:
+  port: 8080
+
+spring:
+  jpa:
+    hibernate:
+      # 운영에서 update 는 위험하다. 스키마가 안 맞으면 뜨지 않고 알려준다
+      ddl-auto: validate
+    show-sql: false
+
+  web:
+    error:
+      # 내부 구조를 외부에 알려주지 않는다
+      include-message: never
+      include-binding-errors: never
+      include-stacktrace: never
+
+management:
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: WARN
+    com.inwoo.classtrack: INFO
+
+# app.developer 를 정의하지 않는다 -> /api/developer 는 404 를 돌려준다
