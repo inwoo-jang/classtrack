@@ -55,12 +55,20 @@ export type CourseUpdateRequest = CourseCreateRequest
 export type LinkStatus = 'NONE' | 'PENDING' | 'OK' | 'BROKEN'
 
 export type AssignmentStatus = 'TODO' | 'IN_PROGRESS' | 'COMPLETED'
+export type AssignmentMode = 'INDIVIDUAL' | 'TEAM'
+export type AssignmentRequirement = 'REQUIRED' | 'OPTIONAL'
 
 export const ASSIGNMENT_STATUSES: readonly AssignmentStatus[] = [
   'TODO',
   'IN_PROGRESS',
   'COMPLETED',
 ]
+
+export interface AssignmentLink {
+  url: string
+  status: LinkStatus
+  checkedAt: string | null
+}
 
 /** com.inwoo.classtrack.dto.assignment.AssignmentResponse */
 export interface Assignment {
@@ -70,28 +78,35 @@ export interface Assignment {
   title: string
   description: string | null
   /** ISO date-time, 예: "2026-03-20T23:59:00" */
-  dueDate: string
+  dueDate: string | null
+  assignmentMode: AssignmentMode
+  requirement: AssignmentRequirement
   status: AssignmentStatus
   /** 완료로 바꾼 시각 */
   submittedAt: string | null
   /** Google Drive / GitHub 등 결과물 링크 */
-  submissionUrl: string | null
-  linkStatus: LinkStatus
-  linkCheckedAt: string | null
+  submissionLinks: AssignmentLink[]
 }
 
 /** com.inwoo.classtrack.dto.assignment.AssignmentCreateRequest */
 export interface AssignmentCreateRequest {
   title: string
   description: string | null
-  dueDate: string
-  submissionUrl: string | null
+  dueDate: string | null
+  assignmentMode: AssignmentMode
+  requirement: AssignmentRequirement
+  submissionUrls: string[]
 }
 
 /** com.inwoo.classtrack.dto.assignment.AssignmentUpdateRequest */
 export interface AssignmentUpdateRequest {
+  title: string
+  description: string | null
+  dueDate: string | null
+  assignmentMode: AssignmentMode
+  requirement: AssignmentRequirement
   status: AssignmentStatus
-  submissionUrl: string | null
+  submissionUrls: string[]
 }
 
 /** com.inwoo.classtrack.logging.LogEntry */

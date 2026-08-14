@@ -2,9 +2,11 @@ package com.inwoo.classtrack.dto.assignment;
 
 import com.inwoo.classtrack.domain.Assignment;
 import com.inwoo.classtrack.domain.AssignmentStatus;
-import com.inwoo.classtrack.domain.LinkStatus;
+import com.inwoo.classtrack.domain.AssignmentMode;
+import com.inwoo.classtrack.domain.AssignmentRequirement;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record AssignmentResponse(
         Long id,
@@ -13,11 +15,11 @@ public record AssignmentResponse(
         String title,
         String description,
         LocalDateTime dueDate,
+        AssignmentMode assignmentMode,
+        AssignmentRequirement requirement,
         AssignmentStatus status,
         LocalDateTime submittedAt,
-        String submissionUrl,
-        LinkStatus linkStatus,
-        LocalDateTime linkCheckedAt) {
+        List<AssignmentLinkResponse> submissionLinks) {
     public static AssignmentResponse from(Assignment assignment) {
         return new AssignmentResponse(
                 assignment.getId(),
@@ -26,10 +28,12 @@ public record AssignmentResponse(
                 assignment.getTitle(),
                 assignment.getDescription(),
                 assignment.getDueDate(),
+                assignment.getAssignmentMode(),
+                assignment.getRequirement(),
                 assignment.getStatus(),
                 assignment.getSubmittedAt(),
-                assignment.getSubmissionUrl(),
-                assignment.getLinkStatus(),
-                assignment.getLinkCheckedAt());
+                assignment.getSubmissionLinks().stream()
+                        .map(AssignmentLinkResponse::from)
+                        .toList());
     }
 }

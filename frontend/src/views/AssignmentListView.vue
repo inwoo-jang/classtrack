@@ -36,7 +36,7 @@ const counts = computed(() =>
 const visible = computed(() => assignments.value.filter((a) => matches(a, filter.value)))
 
 const overdueCount = computed(
-  () => assignments.value.filter((a) => !isDone(a.status) && daysUntil(a.dueDate) < 0).length,
+  () => assignments.value.filter((a) => a.dueDate && !isDone(a.status) && daysUntil(a.dueDate) < 0).length,
 )
 
 /** 수정된 과제를 목록에 반영한다 (전체 재조회 없이). */

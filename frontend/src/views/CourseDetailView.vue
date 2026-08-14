@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { assignmentApi, courseApi } from '@/api/courses'
 import { ApiError } from '@/api/client'
-import type { Assignment, Course } from '@/types/api'
+import type { Assignment, AssignmentMode, AssignmentRequirement, Course } from '@/types/api'
 import {
   COURSE_STATUS_LABEL,
   deliveryLabel,
@@ -26,7 +26,15 @@ const error = ref<string | null>(null)
 const showForm = ref(false)
 const submitting = ref(false)
 const formError = ref<string | null>(null)
-const form = reactive({ title: '', description: '', dueDate: '', submissionUrl: '' })
+const form = reactive({
+  title: '',
+  description: '',
+  dueDate: '',
+  noDueDate: false,
+  assignmentMode: 'INDIVIDUAL' as AssignmentMode,
+  requirement: 'REQUIRED' as AssignmentRequirement,
+  submissionUrlsText: '',
+})
 
 /** 서버 집계 대신 화면에서 직접 센다 — 상태를 바꿔도 재조회 없이 즉시 반영된다. */
 const summary = computed(() => {
@@ -35,14 +43,14 @@ const summary = computed(() => {
   const inProgress = list.filter((a) => a.status === 'IN_PROGRESS').length
   const completed = list.filter((a) => a.status === 'COMPLETED').length
   const overdue = list.filter(
-    (a) => !isDone(a.status) && new Date(a.dueDate).getTime() < Date.now(),
+    (a) => a.dueDate && !isDone(a.status) && new Date(a.dueDate).getTime() < Date.now(),
   ).length
 
   return { total: list.length, todo, inProgress, completed, overdue }
 })
 
 const doneCount = computed(() => summary.value.completed)
-const linkedCount = computed(() => assignments.value.filter((a) => a.submissionUrl).length)
+const linkedCount = computed(() => assignments.value.filter((a) => a.submissionLinks.length).length)
 
 function message(e: unknown): string {
   return e instanceof ApiError ? e.message : '알 수 없는 오류가 발생했습니다.'
@@ -81,15 +89,22 @@ async function addAssignment() {
       title: form.title,
       description: form.description || null,
       // datetime-local 은 "2026-03-20T23:59" 형태라 초를 붙여 LocalDateTime 에 맞춘다.
-      dueDate: form.dueDate.length === 16 ? `${form.dueDate}:00` : form.dueDate,
-      submissionUrl: form.submissionUrl.trim() || null,
+      dueDate: form.noDueDate
+        ? null
+        : form.dueDate.length === 16 ? `${form.dueDate}:00` : form.dueDate || null,
+      assignmentMode: form.assignmentMode,
+      requirement: form.requirement,
+      submissionUrls: form.submissionUrlsText.split('\n').map((url) => url.trim()).filter(Boolean),
     })
     assignments.value.push(created)
-    assignments.value.sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+    assignments.value.sort((a, b) => (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999'))
     form.title = ''
     form.description = ''
     form.dueDate = ''
-    form.submissionUrl = ''
+    form.noDueDate = false
+    form.assignmentMode = 'INDIVIDUAL'
+    form.requirement = 'REQUIRED'
+    form.submissionUrlsText = ''
     showForm.value = false
   } catch (e) {
     formError.value = message(e)
@@ -193,25 +208,40 @@ async function addAssignment() {
 
           <div class="field">
             <label for="a-due">마감일</label>
-            <input id="a-due" v-model="form.dueDate" class="input" type="datetime-local" required />
+            <input id="a-due" v-model="form.dueDate" class="input" type="datetime-local" :disabled="form.noDueDate" :required="!form.noDueDate" />
+            <label class="check"><input v-model="form.noDueDate" type="checkbox" /> 마감 없음</label>
+          </div>
+
+          <div class="field">
+            <label for="a-mode">과제 형태</label>
+            <select id="a-mode" v-model="form.assignmentMode" class="input">
+              <option value="INDIVIDUAL">개인</option><option value="TEAM">팀</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="a-requirement">필수 여부</label>
+            <select id="a-requirement" v-model="form.requirement" class="input">
+              <option value="REQUIRED">필수</option><option value="OPTIONAL">자율</option>
+            </select>
           </div>
 
           <div class="field span">
             <label for="a-url">
               결과물 링크 <span class="muted">(선택 · GitHub / Google Drive)</span>
             </label>
-            <input
+            <textarea
               id="a-url"
-              v-model="form.submissionUrl"
+              v-model="form.submissionUrlsText"
               class="input"
-              type="url"
-              placeholder="https://github.com/…"
+              rows="2"
+              placeholder="링크를 한 줄에 하나씩 입력 (최대 10개)"
             />
           </div>
 
           <div class="field span">
             <label for="a-desc">설명 <span class="muted">(선택)</span></label>
-            <textarea id="a-desc" v-model="form.description" class="input" rows="2" />
+            <textarea id="a-desc" v-model="form.description" class="input" rows="4" maxlength="5000" placeholder="줄바꿈 가능 · 최대 10줄" />
           </div>
 
           <div class="span form-actions">

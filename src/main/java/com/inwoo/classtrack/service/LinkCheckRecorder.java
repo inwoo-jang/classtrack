@@ -32,9 +32,9 @@ public class LinkCheckRecorder {
     @Transactional
     public void record(Long assignmentId, String checkedUrl, LinkStatus result) {
         Assignment assignment = assignmentRepository.findById(assignmentId).orElse(null);
-        if (assignment == null || !checkedUrl.equals(assignment.getSubmissionUrl())) {
+        if (assignment == null) {
             return;
         }
-        assignment.recordLinkCheck(result);
+        assignment.recordLinkCheck(checkedUrl, result);
     }
 }

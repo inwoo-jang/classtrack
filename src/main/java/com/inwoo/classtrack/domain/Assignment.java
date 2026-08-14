@@ -1,6 +1,8 @@
 package com.inwoo.classtrack.domain;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -13,6 +15,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
 
 @Entity
 @Table(name = "assignments")
@@ -32,8 +37,16 @@ public class Assignment {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "due_date", nullable = false)
+    @Column(name = "due_date")
     private LocalDateTime dueDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "assignment_mode", nullable = false, length = 20, columnDefinition = "varchar(20) default 'INDIVIDUAL'")
+    private AssignmentMode assignmentMode = AssignmentMode.INDIVIDUAL;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "requirement", nullable = false, length = 20, columnDefinition = "varchar(20) default 'REQUIRED'")
+    private AssignmentRequirement requirement = AssignmentRequirement.REQUIRED;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -42,17 +55,9 @@ public class Assignment {
     @Column(name = "submitted_at")
     private LocalDateTime submittedAt;
 
-    /** 과제 결과물 위치 (Google Drive, GitHub 저장소 등). 없을 수 있다. */
-    @Column(name = "submission_url", length = 500)
-    private String submissionUrl;
-
-    /** 링크가 실제로 열리는지. 저장 직후에는 PENDING 이고 비동기 확인 후 갱신된다. */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "link_status", nullable = false, columnDefinition = "varchar(20) default 'NONE'")
-    private LinkStatus linkStatus = LinkStatus.NONE;
-
-    @Column(name = "link_checked_at")
-    private LocalDateTime linkCheckedAt;
+    @ElementCollection
+    @CollectionTable(name = "assignment_links", joinColumns = @JoinColumn(name = "assignment_id"))
+    private List<AssignmentLink> submissionLinks = new ArrayList<>();
 
     protected Assignment() {
     }
@@ -62,13 +67,16 @@ public class Assignment {
             String title,
             String description,
             LocalDateTime dueDate,
-            String submissionUrl) {
+            AssignmentMode assignmentMode,
+            AssignmentRequirement requirement,
+            List<String> submissionUrls) {
         this.course = course;
         this.title = title;
         this.description = description;
         this.dueDate = dueDate;
-        this.submissionUrl = normalizeUrl(submissionUrl);
-        this.linkStatus = this.submissionUrl == null ? LinkStatus.NONE : LinkStatus.PENDING;
+        this.assignmentMode = assignmentMode;
+        this.requirement = requirement;
+        replaceSubmissionLinks(submissionUrls);
     }
 
     // Getters는 그대로 유지, Setters는 제거하고 update 메서드와 changeStatus 메서드를 추가
@@ -101,37 +109,44 @@ public class Assignment {
         return submittedAt;
     }
 
-    public String getSubmissionUrl() {
-        return submissionUrl;
+    public AssignmentMode getAssignmentMode() {
+        return assignmentMode;
     }
 
-    public LinkStatus getLinkStatus() {
-        return linkStatus;
+    public AssignmentRequirement getRequirement() {
+        return requirement;
     }
 
-    public LocalDateTime getLinkCheckedAt() {
-        return linkCheckedAt;
+    public List<AssignmentLink> getSubmissionLinks() {
+        return List.copyOf(submissionLinks);
     }
 
     /**
      * 결과물 링크를 교체한다. 빈 문자열은 "링크 없음"으로 취급한다.
      * 링크가 실제로 바뀐 경우에만 확인 상태를 초기화한다.
      */
-    public void linkSubmission(String submissionUrl) {
-        String next = normalizeUrl(submissionUrl);
-        if (java.util.Objects.equals(this.submissionUrl, next)) {
-            return;
+    public void replaceSubmissionLinks(List<String> urls) {
+        LinkedHashSet<String> normalized = new LinkedHashSet<>();
+        if (urls != null) {
+            urls.stream()
+                    .map(Assignment::normalizeUrl)
+                    .filter(java.util.Objects::nonNull)
+                    .forEach(normalized::add);
         }
 
-        this.submissionUrl = next;
-        this.linkStatus = next == null ? LinkStatus.NONE : LinkStatus.PENDING;
-        this.linkCheckedAt = null;
+        submissionLinks.removeIf(link -> !normalized.contains(link.getUrl()));
+        for (String url : normalized) {
+            boolean exists = submissionLinks.stream().anyMatch(link -> link.getUrl().equals(url));
+            if (!exists) submissionLinks.add(new AssignmentLink(url));
+        }
     }
 
     /** 비동기 검증 결과를 기록한다. */
-    public void recordLinkCheck(LinkStatus result) {
-        this.linkStatus = result;
-        this.linkCheckedAt = LocalDateTime.now();
+    public void recordLinkCheck(String checkedUrl, LinkStatus result) {
+        submissionLinks.stream()
+                .filter(link -> link.getUrl().equals(checkedUrl))
+                .findFirst()
+                .ifPresent(link -> link.recordCheck(result));
     }
 
     private static String normalizeUrl(String url) {
@@ -141,10 +156,16 @@ public class Assignment {
     public void update(
             String title,
             String description,
-            LocalDateTime dueDate) {
+            LocalDateTime dueDate,
+            AssignmentMode assignmentMode,
+            AssignmentRequirement requirement,
+            List<String> submissionUrls) {
         this.title = title;
         this.description = description;
         this.dueDate = dueDate;
+        this.assignmentMode = assignmentMode;
+        this.requirement = requirement;
+        replaceSubmissionLinks(submissionUrls);
     }
 
     public void changeStatus(AssignmentStatus status) {

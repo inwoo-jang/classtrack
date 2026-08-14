@@ -42,6 +42,7 @@ public record AssignmentSummary(
     /** 아직 끝내지 않았는데 마감이 지난 과제. */
     private static boolean isOverdue(Assignment assignment) {
         return assignment.getStatus() != AssignmentStatus.COMPLETED
+                && assignment.getDueDate() != null
                 && assignment.getDueDate().isBefore(LocalDateTime.now());
     }
 }

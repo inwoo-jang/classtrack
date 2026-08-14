@@ -45,7 +45,9 @@ public class AssignmentService {
                 request.title(),
                 request.description(),
                 request.dueDate(),
-                request.submissionUrl());
+                request.assignmentMode(),
+                request.requirement(),
+                request.submissionUrls());
 
         Assignment savedAssignment = assignmentRepository.save(assignment);
         publishLinkCheck(savedAssignment);
@@ -53,7 +55,7 @@ public class AssignmentService {
         return AssignmentResponse.from(savedAssignment);
     }
 
-    /** 진행 상태와 결과물 링크를 갱신한다. */
+    /** 과제 내용, 진행 상태와 결과물 링크를 함께 갱신한다. */
     @Transactional
     public AssignmentResponse updateAssignment(
             Long courseId,
@@ -63,8 +65,14 @@ public class AssignmentService {
                 .findByIdAndCourseId(assignmentId, courseId)
                 .orElseThrow(() -> NotFoundException.assignment(assignmentId));
 
+        assignment.update(
+                request.title(),
+                request.description(),
+                request.dueDate(),
+                request.assignmentMode(),
+                request.requirement(),
+                request.submissionUrls());
         assignment.changeStatus(request.status());
-        assignment.linkSubmission(request.submissionUrl());
         publishLinkCheck(assignment);
 
         // 영속 상태이므로 트랜잭션 종료 시 변경 감지(dirty checking)로 반영된다.
@@ -110,10 +118,10 @@ public class AssignmentService {
      * 실제 확인은 커밋 후 비동기로 일어나므로 이 메서드는 즉시 반환한다.
      */
     private void publishLinkCheck(Assignment assignment) {
-        if (assignment.getLinkStatus() == LinkStatus.PENDING) {
-            events.publishEvent(new SubmissionLinkChanged(
-                    assignment.getId(), assignment.getSubmissionUrl()));
-        }
+        assignment.getSubmissionLinks().stream()
+                .filter(link -> link.getStatus() == LinkStatus.PENDING)
+                .forEach(link -> events.publishEvent(new SubmissionLinkChanged(
+                        assignment.getId(), link.getUrl())));
     }
 
     private void ensureCourseExists(Long courseId) {

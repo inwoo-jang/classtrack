@@ -10,7 +10,8 @@ export function formatDate(iso: string): string {
 }
 
 /** "2026-03-20T23:59:00" -> "3월 20일 오후 11:59" */
-export function formatDateTime(iso: string): string {
+export function formatDateTime(iso: string | null): string {
+  if (!iso) return '마감 없음'
   return new Date(iso).toLocaleString('ko-KR', {
     month: 'long',
     day: 'numeric',
@@ -20,7 +21,8 @@ export function formatDateTime(iso: string): string {
 }
 
 /** 마감까지 남은 일수. 음수면 이미 지난 것. */
-export function daysUntil(iso: string): number {
+export function daysUntil(iso: string | null): number {
+  if (!iso) return Number.POSITIVE_INFINITY
   const diff = new Date(iso).getTime() - Date.now()
   return Math.ceil(diff / (1000 * 60 * 60 * 24))
 }
@@ -71,6 +73,7 @@ export function deadlineBadge(
   assignment: Assignment,
 ): { text: string; urgent: boolean } | null {
   if (isDone(assignment.status)) return null
+  if (!assignment.dueDate) return null
 
   const days = daysUntil(assignment.dueDate)
   if (days < 0) return { text: `${Math.abs(days)}일 지남`, urgent: true }
