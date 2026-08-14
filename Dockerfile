@@ -50,8 +50,13 @@ COPY --from=backend --chown=app:app /app/target/*.jar app.jar
 # PaaS 는 PORT 환경변수로 포트를 지정한다. application.yaml 의 server.port 가 이 값을 읽는다.
 EXPOSE 8080
 
-# 무료 플랜은 메모리가 512MB 로 작다.
-# - MaxRAMPercentage=70: 힙을 컨테이너 메모리 기준으로 잡되, 메타스페이스와 스레드 스택에
-#   쓸 여유를 남긴다. 75 로 두면 기동 중 OOM 으로 죽는 경우가 있다.
-# - UseSerialGC: 코어가 적은 작은 컨테이너에서는 병렬 GC 의 스레드 오버헤드가 손해다.
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=70", "-XX:+UseSerialGC", "-jar", "/app/app.jar"]
+# 무료 플랜은 메모리가 512MB 로 작다. 실측 기준으로 잡은 값이다.
+#
+#   힙 50%(=256MB) + 메타스페이스 128MB + 코드캐시·스레드 ≈ 450MB
+#
+# MaxRAMPercentage 는 힙만 제한한다는 점이 함정이다. 이 앱은 Spring·Hibernate·AspectJ 를
+# 모두 쓰다 보니 메타스페이스만 90MB 가 넘어서, 힙을 70% 로 두면 합계가 512MB 를 넘긴다.
+# 컨테이너가 한도를 넘으면 JVM 예외가 아니라 OS 가 프로세스를 죽인다(OOMKilled).
+#
+# UseSerialGC: 코어가 적은 작은 컨테이너에서는 병렬 GC 의 스레드 오버헤드가 손해다.
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=50", "-XX:MaxMetaspaceSize=128m", "-XX:+UseSerialGC", "-XX:+ExitOnOutOfMemoryError", "-jar", "/app/app.jar"]
