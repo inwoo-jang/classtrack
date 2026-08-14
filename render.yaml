@@ -1,0 +1,34 @@
+# Render 배포 설정 (Blueprint).
+# 대시보드에서 New → Blueprint 로 저장소를 연결하면 이 파일을 읽는다.
+#
+# 값이 필요한 환경변수는 sync: false 로 두었다 — 크리덴셜을 저장소에 담지 않기 위해서다.
+# Render 가 배포 전에 값을 물어보고, 이후에는 대시보드에서 관리한다.
+
+services:
+  - type: web
+    name: classtrack-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: singapore # Neon DB 가 ap-southeast-1 이라 가까운 리전을 고른다
+    plan: free
+    healthCheckPath: /actuator/health
+
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+
+      # 아래 넷은 대시보드에서 입력한다 (저장소에 담지 않음)
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+
+      # Vercel 프론트 주소. 프론트를 배포한 뒤에 채운다.
+      # 예) https://classtrack.vercel.app,https://classtrack-*.vercel.app
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+
+# PORT 는 Render 가 자동으로 넣는다 (기본 10000). application.yaml 의
+# server.port=${PORT:8085} 가 그 값을 읽으므로 따로 등록하지 않는다.

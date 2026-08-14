@@ -47,7 +47,11 @@ USER app
 
 COPY --from=backend --chown=app:app /app/target/*.jar app.jar
 
-# Railway 는 PORT 환경변수로 포트를 지정한다. application-prod.yaml 이 이 값을 읽는다.
+# PaaS 는 PORT 환경변수로 포트를 지정한다. application.yaml 의 server.port 가 이 값을 읽는다.
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]
+# 무료 플랜은 메모리가 512MB 로 작다.
+# - MaxRAMPercentage=70: 힙을 컨테이너 메모리 기준으로 잡되, 메타스페이스와 스레드 스택에
+#   쓸 여유를 남긴다. 75 로 두면 기동 중 OOM 으로 죽는 경우가 있다.
+# - UseSerialGC: 코어가 적은 작은 컨테이너에서는 병렬 GC 의 스레드 오버헤드가 손해다.
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=70", "-XX:+UseSerialGC", "-jar", "/app/app.jar"]

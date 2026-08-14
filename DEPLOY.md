@@ -1,10 +1,13 @@
 # 배포 가이드
 
-프론트는 Vercel, 백엔드는 Railway, DB 는 Neon 에 둔다.
+프론트는 Vercel, 백엔드는 Render, DB 는 Neon 에 둔다.
 
 ```
-Vercel (Vue)  ──HTTPS──→  Railway (Spring Boot)  ──→  Neon (PostgreSQL)
+Vercel (Vue)  ──HTTPS──→  Render (Spring Boot)  ──→  Neon (PostgreSQL)
 ```
+
+> Railway 설정(`railway.toml`)도 남겨두었다. Dockerfile 기반이라 둘 중
+> 어느 쪽에 올려도 코드는 그대로다.
 
 세 곳이 서로의 주소를 알아야 하므로 **순서가 있다.** 백엔드를 먼저 올려 주소를 얻고,
 그 주소로 프론트를 빌드하고, 다시 백엔드에 프론트 주소를 CORS 로 등록한다.
@@ -16,25 +19,35 @@ Vercel (Vue)  ──HTTPS──→  Railway (Spring Boot)  ──→  Neon (Post
 Neon 콘솔에서 비밀번호를 새로 발급받는다. 로컬 `secrets.properties` 의 `DB_PASSWORD` 도
 같은 값으로 바꾼다.
 
-## 1. Railway — 백엔드
+## 1. Render — 백엔드
 
-1. [railway.app](https://railway.app) 가입 → GitHub 연동
-2. **New Project → Deploy from GitHub repo → `classtrack`**
-   - `Dockerfile` 과 `railway.toml` 을 자동으로 감지한다
-3. **Variables** 탭에서 등록:
+1. [render.com](https://render.com) 가입 → GitHub 연동
+2. **New → Blueprint** → 저장소 `classtrack` 선택
+   - 저장소의 `render.yaml` 을 읽어 서비스를 자동으로 만든다
+   - Blueprint 대신 **New → Web Service** 로 만들어도 된다.
+     그때는 Runtime 을 **Docker** 로, Health Check Path 를 `/actuator/health` 로 지정한다
+3. 배포 전에 값을 물어보는 환경변수를 채운다:
 
    | 이름 | 값 |
    |---|---|
-   | `SPRING_PROFILES_ACTIVE` | `prod` |
    | `DB_URL` | `secrets.properties` 의 `DB_URL` |
    | `DB_USERNAME` | `secrets.properties` 의 `DB_USERNAME` |
    | `DB_PASSWORD` | 0번에서 새로 발급한 값 |
+   | `CORS_ALLOWED_ORIGINS` | 아직 모르므로 **비워두거나 아무 값** — 2번 이후 3번에서 채운다 |
 
-   > `PORT` 는 Railway 가 자동으로 넣는다. 직접 등록하지 말 것.
+   `SPRING_PROFILES_ACTIVE=prod` 는 `render.yaml` 에 이미 들어 있다.
 
-4. **Settings → Networking → Generate Domain**
-   → `https://classtrack-production-xxxx.up.railway.app` 같은 주소를 받는다
+   > `PORT` 는 Render 가 자동으로 넣는다(기본 10000). 직접 등록하지 말 것.
+
+4. 배포가 끝나면 `https://classtrack-api.onrender.com` 같은 주소를 받는다
 5. 확인: `<주소>/actuator/health` 가 `{"status":"UP"}` 을 돌려주면 성공
+
+### 무료 플랜에서 알아둘 것
+
+- **15분 동안 요청이 없으면 잠든다.** 다음 첫 요청은 컨테이너를 다시 띄우므로
+  **50초~1분** 걸린다. 화면이 한참 안 뜨는 것처럼 보이지만 고장이 아니다.
+- 메모리가 512MB 라 Dockerfile 에서 힙을 70% 로 제한하고 SerialGC 를 쓴다.
+- 첫 빌드는 5~10분 걸릴 수 있다.
 
 ## 2. Vercel — 프론트
 
@@ -45,21 +58,21 @@ Neon 콘솔에서 비밀번호를 새로 발급받는다. 로컬 `secrets.proper
 
    | 이름 | 값 |
    |---|---|
-   | `VITE_API_BASE_URL` | 1-4 에서 받은 Railway 주소 (끝에 `/` 없이) |
+   | `VITE_API_BASE_URL` | 1-4 에서 받은 Render 주소 (끝에 `/` 없이) |
 
 5. Deploy → `https://classtrack.vercel.app` 같은 주소를 받는다
 
-## 3. 다시 Railway — CORS 등록
+## 3. 다시 Render — CORS 등록
 
 프론트와 API 의 출처가 다르므로, 백엔드가 프론트 주소를 허용해야 한다.
-Railway **Variables** 에 하나 더 추가한다:
+Render 서비스의 **Environment** 에서 값을 채운다:
 
 | 이름 | 값 |
 |---|---|
 | `CORS_ALLOWED_ORIGINS` | `https://classtrack.vercel.app,https://classtrack-*.vercel.app` |
 
 두 번째 항목은 Vercel 이 커밋마다 만드는 미리보기 도메인용 와일드카드다.
-저장하면 Railway 가 자동으로 재배포한다.
+저장하면 Render 가 자동으로 재배포한다.
 
 ---
 
@@ -67,9 +80,9 @@ Railway **Variables** 에 하나 더 추가한다:
 
 | 확인할 것 | 기대 |
 |---|---|
-| `<railway>/actuator/health` | `{"status":"UP"}` |
-| `<railway>/api/courses` | JSON 배열 |
-| `<railway>/api/dev/overview` | **404** (prod 에서는 막힘) |
+| `<render>/actuator/health` | `{"status":"UP"}` |
+| `<render>/api/courses` | JSON 배열 |
+| `<render>/api/dev/overview` | **404** (prod 에서는 막힘) |
 | `<vercel>` 접속 | 대시보드가 뜨고 데이터가 보임 |
 | `<vercel>/courses/1` 로 새로고침 | 404 가 아니라 화면이 뜸 |
 | 강의 등록·수정 | 저장됨 (CORS 통과) |
@@ -84,7 +97,7 @@ Railway **Variables** 에 하나 더 추가한다:
 `PATCH`·`PUT`·`DELETE` 는 브라우저가 `OPTIONS` 로 먼저 물어본다(preflight).
 Network 탭에서 `OPTIONS` 요청이 403 이면 CORS 설정 문제다.
 
-**Railway 가 Healthcheck failure 로 실패한다**
+**Healthcheck / 배포가 실패한다** (Render·Railway 공통)
 
 헬스체크 실패는 대부분 <b>앱이 아예 뜨지 않은 것</b>이다. 포트가 열리지 않으니 응답이 없다.
 Deploy Logs 에서 `APPLICATION FAILED TO START` 블록을 찾으면 원인이 한 줄로 적혀 있다.
@@ -98,10 +111,14 @@ Deploy Logs 에서 `APPLICATION FAILED TO START` 블록을 찾으면 원인이 �
 | `UnknownHostException` | `DB_URL` 호스트 오타 |
 
 로그에 `Started ClasstrackApplication` 이 찍혔는데도 실패한다면 그때는 포트 문제다.
-`Tomcat started on port ...` 줄의 포트가 Railway 가 준 `PORT` 와 같은지 본다.
+`Tomcat started on port ...` 줄의 포트가 플랫폼이 준 `PORT` 와 같은지 본다.
 
 **Vercel 빌드가 실패한다**
 Root Directory 가 `frontend` 인지 확인한다.
+
+**첫 접속이 1분 가까이 걸린다**
+Render 무료 플랜이 잠들어 있다가 깨어나는 중이다. 고장이 아니다.
+계속 깨어 있게 하려면 유료 플랜으로 올리거나 주기적으로 호출해야 한다.
 
 ---
 
