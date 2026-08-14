@@ -16,6 +16,11 @@ export const dashboardApi = {
   load: () => api.get<Dashboard>('/api/dashboard'),
 }
 
+export const portfolioApi = {
+  markdown: (featuredOnly: boolean) =>
+    api.getText(`/api/portfolio/markdown?featuredOnly=${featuredOnly}`),
+}
+
 export const technologyApi = {
   /** 설정 기본값 + 이미 쓰인 기술 */
   list: () => api.get<string[]>('/api/technologies'),

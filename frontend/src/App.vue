@@ -17,6 +17,7 @@ import BrandMark from '@/components/BrandMark.vue'
           <!-- 강의 상세(/courses/1)에서도 "강의" 탭이 켜지도록 exact 대신 부분 일치를 쓴다 -->
           <RouterLink to="/courses" class="section-link">강의</RouterLink>
           <RouterLink to="/assignments">과제</RouterLink>
+          <RouterLink to="/portfolio">포트폴리오</RouterLink>
         </nav>
       </div>
     </header>

@@ -37,6 +37,11 @@ const router = createRouter({
       component: () => import('@/views/AssignmentListView.vue'),
     },
     {
+      path: '/portfolio',
+      name: 'portfolio',
+      component: () => import('@/views/PortfolioView.vue'),
+    },
+    {
       path: '/dev',
       name: 'dev-overview',
       component: () => import('@/views/DevOverviewView.vue'),
