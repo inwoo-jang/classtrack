@@ -180,4 +180,17 @@ async function remove() {
 .status{padding:4px 8px;border:1px solid var(--line-strong);border-radius:999px;background:var(--surface);font-size:.74rem}.course{display:inline-block;margin-top:3px;font-size:.78rem;color:var(--ink-muted)}.desc{margin:5px 0 0;font-size:.83rem;white-space:pre-wrap;overflow-wrap:anywhere}.edit{padding:0;border:0;background:none;font-size:.74rem;color:var(--ink-muted);cursor:pointer}.edit:hover{color:var(--mint-deep)}.edit.danger:hover,.err{color:var(--danger)}
 .editor{display:grid;gap:8px;margin-top:12px;padding:12px;background:var(--surface-sunken);border-radius:10px}.wide{width:100%}.fields .input{flex:1;min-width:140px}.actions{justify-content:flex-end}.btn-sm{padding:6px 14px;font-size:.8rem}.err{margin:7px 0 0;font-size:.78rem}.due{display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:.8rem;color:var(--ink-soft);white-space:nowrap}.dday{font-size:.73rem;font-weight:600}.dday.urgent{color:var(--danger)}
 @media(max-width:680px){.row{grid-template-columns:auto minmax(0,1fr)}.due{grid-column:2;align-items:flex-start}}
+
+/* 기술 칩 — 강의 카드와 같은 모양 */
+.techs{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 0}
+.tech{padding:2px 8px;border:1px solid var(--line);border-radius:5px;background:var(--surface-sunken);font-size:.7rem;color:var(--ink-soft);white-space:nowrap}
+.star{color:var(--mint-deep);font-size:.8rem}
+/* 편집 폼 */
+.tech-field{display:flex;flex-direction:column;gap:5px}
+.tech-label{font-size:.76rem}
+.team{display:inline-flex;align-items:center;gap:7px;font-size:.82rem;color:var(--ink-soft)}
+.team-size{width:76px}
+.featured-toggle{display:inline-flex;align-items:center;gap:7px;font-size:.82rem;color:var(--ink-soft);cursor:pointer}
+.featured-toggle input{accent-color:var(--mint-deep)}
+.spacer{flex:1}
 </style>
