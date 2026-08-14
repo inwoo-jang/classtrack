@@ -62,6 +62,13 @@ Neon 콘솔에서 비밀번호를 새로 발급받는다. 로컬 `secrets.proper
 
 5. Deploy → `https://classtrack.vercel.app` 같은 주소를 받는다
 
+`frontend/vercel.json` 이 하는 일 (JSON 이라 파일에는 주석을 달 수 없어 여기 적는다):
+
+| 설정 | 이유 |
+|---|---|
+| `rewrites` → `/index.html` | Vue Router 가 history 모드라 `/courses/1` 로 새로고침하면 서버에 그 경로를 요청한다. 그런 파일은 없으므로 index.html 을 돌려주고 라우팅은 브라우저가 하게 한다. 실제 파일(assets, 아이콘)은 Vercel 이 먼저 찾아서 그대로 준다 |
+| `headers` → `/assets/*` 1년 캐시 | 번들 파일명에 내용 해시가 붙으므로, 내용이 바뀌면 이름도 바뀐다. 같은 이름이면 같은 내용이 보장되어 영구 캐시가 안전하다 |
+
 ## 3. 다시 Render — CORS 등록
 
 프론트와 API 의 출처가 다르므로, 백엔드가 프론트 주소를 허용해야 한다.
