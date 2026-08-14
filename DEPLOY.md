@@ -84,9 +84,21 @@ Railway **Variables** 에 하나 더 추가한다:
 `PATCH`·`PUT`·`DELETE` 는 브라우저가 `OPTIONS` 로 먼저 물어본다(preflight).
 Network 탭에서 `OPTIONS` 요청이 403 이면 CORS 설정 문제다.
 
-**Railway 배포가 실패한다**
-Deploy Logs 에서 `APPLICATION FAILED TO START` 블록을 찾는다.
-`ddl-auto: validate` 라 DB 스키마가 엔티티와 다르면 뜨지 않는다.
+**Railway 가 Healthcheck failure 로 실패한다**
+
+헬스체크 실패는 대부분 <b>앱이 아예 뜨지 않은 것</b>이다. 포트가 열리지 않으니 응답이 없다.
+Deploy Logs 에서 `APPLICATION FAILED TO START` 블록을 찾으면 원인이 한 줄로 적혀 있다.
+
+| 로그의 Description | 원인 |
+|---|---|
+| `Could not resolve placeholder 'DB_URL'` | 변수 이름 오타 또는 미등록 |
+| `password authentication failed` | `DB_PASSWORD` 가 틀림 (Neon 에서 리셋했다면 새 값인지 확인) |
+| `Unable to determine Dialect` | `DB_URL` 이 잘못됐거나 DB 에 접속 불가 |
+| `Schema-validation: missing table/column` | `ddl-auto: validate` 인데 스키마가 엔티티와 다름 |
+| `UnknownHostException` | `DB_URL` 호스트 오타 |
+
+로그에 `Started ClasstrackApplication` 이 찍혔는데도 실패한다면 그때는 포트 문제다.
+`Tomcat started on port ...` 줄의 포트가 Railway 가 준 `PORT` 와 같은지 본다.
 
 **Vercel 빌드가 실패한다**
 Root Directory 가 `frontend` 인지 확인한다.

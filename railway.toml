@@ -10,7 +10,7 @@ dockerfilePath = "Dockerfile"
 # 이 경로가 200 을 돌려줘야 배포 성공으로 본다.
 # Spring Boot 기동에 시간이 걸리므로 타임아웃을 넉넉히 잡는다.
 healthcheckPath = "/actuator/health"
-healthcheckTimeout = 120
+healthcheckTimeout = 300
 
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
