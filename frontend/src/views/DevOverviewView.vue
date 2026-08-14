@@ -58,6 +58,77 @@ onMounted(async () => {
 
   <StateBlock :loading="loading" :error="error">
     <template v-if="data">
+      <!-- ── 배포 환경 ── -->
+      <section class="section">
+        <header class="sec-head">
+          <h2 class="sec-title">배포 환경</h2>
+          <span class="muted n">지금 이 서버에 적용된 실제 값</span>
+        </header>
+
+        <div class="card env">
+          <dl class="env-grid">
+            <div>
+              <dt>프로필</dt>
+              <dd class="mono">{{ data.runtime.activeProfiles.join(', ') }}</dd>
+            </div>
+            <div>
+              <dt>포트</dt>
+              <dd class="mono">{{ data.runtime.serverPort }}</dd>
+            </div>
+            <div>
+              <dt>Java</dt>
+              <dd class="mono">{{ data.runtime.javaVersion }}</dd>
+            </div>
+            <div>
+              <dt>Spring Boot</dt>
+              <dd class="mono">{{ data.runtime.springBootVersion }}</dd>
+            </div>
+            <div>
+              <dt>스키마 정책</dt>
+              <dd class="mono">{{ data.runtime.ddlAuto }}</dd>
+            </div>
+            <div class="wide">
+              <dt>DB</dt>
+              <dd class="mono">{{ data.runtime.databaseHost }}</dd>
+            </div>
+          </dl>
+
+          <div class="split">
+            <h3 class="env-sub">프론트엔드 배치</h3>
+            <p class="env-desc">
+              <template v-if="data.runtime.servesFrontend">
+                이 서버가 프론트까지 서빙합니다 (통합 배포). 같은 출처라 CORS 가 필요 없습니다.
+              </template>
+              <template v-else>
+                프론트는 별도 호스팅(Vercel)에서 서빙되고 이 서버는 API 만 담당합니다.
+                출처가 달라지므로 아래 CORS 설정이 필요합니다.
+              </template>
+            </p>
+
+            <h3 class="env-sub">CORS 허용 출처</h3>
+            <template v-if="data.runtime.corsAllowedOrigins.length">
+              <ul class="origins">
+                <li v-for="o in data.runtime.corsAllowedOrigins" :key="o" class="mono">{{ o }}</li>
+              </ul>
+              <p class="env-desc">
+                <code>CorsConfig</code> 가 <code>/api/**</code> 에 등록합니다.
+                GET·POST·PUT·PATCH·DELETE 를 허용하고, preflight(OPTIONS) 응답은 1시간 캐시합니다.
+                환경변수 <code>CORS_ALLOWED_ORIGINS</code> 로 주입합니다.
+              </p>
+            </template>
+            <p v-else class="env-desc">
+              <b>지금은 등록된 출처가 없습니다</b> — 같은 출처에서만 호출할 수 있습니다.
+              개발 중에는 Vite 프록시가 <code>/api</code> 를 백엔드로 넘겨주므로 브라우저 입장에서
+              교차 출처가 발생하지 않습니다.<br />
+              구현은 <code>CorsConfig</code> 에 있고 <code>/api/**</code> 에 대해
+              GET·POST·PUT·PATCH·DELETE 를 허용합니다. preflight(OPTIONS) 응답은 1시간 캐시하며,
+              허용 목록은 환경변수 <code>CORS_ALLOWED_ORIGINS</code> 로 주입합니다
+              (쉼표 구분, <code>*</code> 와일드카드 가능).
+            </p>
+          </div>
+        </div>
+      </section>
+
       <!-- ── API ── -->
       <section class="section">
         <header class="sec-head">
@@ -173,6 +244,84 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.env {
+  padding: 18px 20px;
+}
+
+.env-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px 20px;
+  margin: 0;
+}
+
+.env-grid .wide {
+  grid-column: 1 / -1;
+}
+
+.env-grid dt {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+}
+
+.env-grid dd {
+  margin: 3px 0 0;
+  font-size: 0.83rem;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.split {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.env-sub {
+  margin: 0 0 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.env-sub:not(:first-child) {
+  margin-top: 16px;
+}
+
+.env-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  max-width: 72ch;
+}
+
+.env-desc code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface-sunken);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.76rem;
+}
+
+.origins {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.origins li {
+  padding: 3px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+}
+
 .lead-note {
   margin: 0 0 22px;
   font-size: 0.83rem;

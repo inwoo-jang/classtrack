@@ -31,3 +31,7 @@ logging:
     com.inwoo.classtrack: INFO
 
 # app.developer 를 정의하지 않는다 -> /api/developer 는 404 를 돌려준다
+#
+# 프론트를 Vercel 에 따로 배포하므로 그 도메인을 CORS 허용 목록에 넣어야 한다.
+# Railway 환경변수로 주입한다 (쉼표 구분, 와일드카드 가능):
+#   CORS_ALLOWED_ORIGINS=https://classtrack.vercel.app,https://classtrack-*.vercel.app

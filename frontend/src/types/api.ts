@@ -166,7 +166,21 @@ export interface EntityInfo {
   attributes: EntityAttribute[]
 }
 
+export interface RuntimeInfo {
+  activeProfiles: string[]
+  serverPort: string
+  javaVersion: string
+  springBootVersion: string
+  /** 비어 있으면 같은 출처에서만 호출 가능 */
+  corsAllowedOrigins: string[]
+  /** 이 서버가 프론트까지 서빙하는지 */
+  servesFrontend: boolean
+  databaseHost: string
+  ddlAuto: string
+}
+
 export interface DevOverview {
+  runtime: RuntimeInfo
   endpoints: EndpointInfo[]
   serviceMethods: ServiceMethodInfo[]
   entities: EntityInfo[]

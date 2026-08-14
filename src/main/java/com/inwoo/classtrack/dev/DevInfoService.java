@@ -1,9 +1,11 @@
 package com.inwoo.classtrack.dev;
 
 import com.inwoo.classtrack.aspect.LogExecution;
+import com.inwoo.classtrack.config.CorsProperties;
 import com.inwoo.classtrack.dev.DevOverview.AttributeInfo;
 import com.inwoo.classtrack.dev.DevOverview.EndpointInfo;
 import com.inwoo.classtrack.dev.DevOverview.EntityInfo;
+import com.inwoo.classtrack.dev.DevOverview.RuntimeInfo;
 import com.inwoo.classtrack.dev.DevOverview.ServiceMethodInfo;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Table;
@@ -12,7 +14,10 @@ import jakarta.persistence.metamodel.EntityType;
 import jakarta.persistence.metamodel.SingularAttribute;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.SpringBootVersion;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.env.Environment;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,6 +74,8 @@ public class DevInfoService {
     private final RequestMappingHandlerMapping handlerMapping;
     private final ApplicationContext applicationContext;
     private final EntityManagerFactory entityManagerFactory;
+    private final Environment environment;
+    private final CorsProperties cors;
 
     /**
      * actuator 가 {@code controllerEndpointHandlerMapping} 이라는 같은 타입 Bean 을 하나 더
@@ -77,14 +84,50 @@ public class DevInfoService {
     public DevInfoService(
             @Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping handlerMapping,
             ApplicationContext applicationContext,
-            EntityManagerFactory entityManagerFactory) {
+            EntityManagerFactory entityManagerFactory,
+            Environment environment,
+            CorsProperties cors) {
         this.handlerMapping = handlerMapping;
         this.applicationContext = applicationContext;
         this.entityManagerFactory = entityManagerFactory;
+        this.environment = environment;
+        this.cors = cors;
     }
 
     public DevOverview build() {
-        return new DevOverview(endpoints(), serviceMethods(), entities());
+        return new DevOverview(runtime(), endpoints(), serviceMethods(), entities());
+    }
+
+    // ------------------------------------------------------------------
+    // 실행 환경 — 설정 파일이 아니라 지금 적용된 실제 값
+    // ------------------------------------------------------------------
+
+    private RuntimeInfo runtime() {
+        String[] active = environment.getActiveProfiles();
+        List<String> profiles = List.of(
+                active.length > 0 ? active : environment.getDefaultProfiles());
+
+        return new RuntimeInfo(
+                profiles,
+                environment.getProperty("local.server.port",
+                        environment.getProperty("server.port", "-")),
+                System.getProperty("java.version"),
+                SpringBootVersion.getVersion(),
+                cors.allowedOrigins(),
+                new ClassPathResource("static/index.html").exists(),
+                databaseHost(),
+                environment.getProperty("spring.jpa.hibernate.ddl-auto", "-"));
+    }
+
+    /** 크리덴셜이 섞이지 않도록 호스트와 DB 이름만 뽑는다. */
+    private String databaseHost() {
+        String url = environment.getProperty("spring.datasource.url", "");
+        if (url.isBlank()) {
+            return "-";
+        }
+        String stripped = url.replaceFirst("^jdbc:postgresql://", "");
+        int query = stripped.indexOf('?');
+        return query == -1 ? stripped : stripped.substring(0, query);
     }
 
     // ------------------------------------------------------------------

@@ -42,6 +42,19 @@ export function deliveryLabel(course: Course): string {
   return course.liveLecture ? '대면' : '비대면'
 }
 
+/**
+ * 장소에서 호수만 뽑는다. "판교 캠퍼스 5층 501호" -> "501호"
+ * 캠퍼스·층은 매번 같아서 카드에서는 정보가 되지 못한다.
+ */
+export function roomOf(location: string): string {
+  const room = location.match(/(\S*\d+호)\s*$/)
+  if (room) return room[1]!
+
+  // "호"로 끝나지 않으면 마지막 낱말이라도 보여준다
+  const parts = location.trim().split(/\s+/)
+  return parts[parts.length - 1] ?? location
+}
+
 /** 진행 중인 강의가 며칠째인지 (1일차부터). */
 export function courseDayIndex(course: Course): number {
   const start = new Date(course.startDate).getTime()
