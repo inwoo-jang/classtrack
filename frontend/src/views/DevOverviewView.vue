@@ -9,6 +9,8 @@ import StateBlock from '@/components/StateBlock.vue'
 const data = ref<DevOverview | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
+/** 이 환경에서 개발 도구가 꺼져 있는 경우 (404) */
+const disabled = ref(false)
 
 /** 서비스 클래스별로 묶어서 보여준다. */
 const servicesByClass = computed(() => {
@@ -41,7 +43,8 @@ onMounted(async () => {
   try {
     data.value = await devApi.overview()
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : '구현 현황을 불러오지 못했습니다.'
+    if (e instanceof ApiError && e.status === 404) disabled.value = true
+    else error.value = e instanceof ApiError ? e.message : '구현 현황을 불러오지 못했습니다.'
   } finally {
     loading.value = false
   }
@@ -51,7 +54,13 @@ onMounted(async () => {
 <template>
   <DevTabs />
 
-  <p class="lead-note muted">
+  <p v-if="disabled" class="notice off">
+    이 환경에서는 개발 도구가 꺼져 있습니다. 구현 현황과 로그에는 내부 구조·스택트레이스·요청
+    인자가 담기므로 기본값이 <b>꺼짐</b>입니다.
+    켜려면 서버 환경변수에 <code>DEV_TOOLS_ENABLED=true</code> 를 넣고 재배포하세요.
+  </p>
+
+  <p v-else class="lead-note muted">
     아래 내용은 실행 중인 애플리케이션에서 직접 읽어옵니다 — 핸들러 매핑, Bean 애노테이션,
     JPA Metamodel. 손으로 관리하는 표가 아니므로 코드를 고치면 자동으로 반영됩니다.
   </p>
@@ -320,6 +329,20 @@ onMounted(async () => {
   border-radius: 5px;
   font-size: 0.76rem;
   color: var(--ink-soft);
+}
+
+.off {
+  margin-bottom: 22px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.off code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
 }
 
 .lead-note {

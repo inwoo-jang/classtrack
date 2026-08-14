@@ -24,6 +24,11 @@ management:
     health:
       show-details: always
 
+# 개발 중에는 항상 켠다
+app:
+  dev:
+    enabled: true
+
 logging:
   level:
     root: INFO

@@ -119,7 +119,12 @@ public class DevInfoService {
                 environment.getProperty("spring.jpa.hibernate.ddl-auto", "-"));
     }
 
-    /** 크리덴셜이 섞이지 않도록 호스트와 DB 이름만 뽑는다. */
+    /**
+     * 크리덴셜이 섞이지 않도록 호스트와 DB 이름만 뽑는다.
+     *
+     * <p>운영에서 이 화면을 켜둘 수도 있으므로, local 이 아니면 호스트를 가린다.
+     * 비밀은 아니지만 굳이 공개할 이유도 없다.
+     */
     private String databaseHost() {
         String url = environment.getProperty("spring.datasource.url", "");
         if (url.isBlank()) {
@@ -127,7 +132,14 @@ public class DevInfoService {
         }
         String stripped = url.replaceFirst("^jdbc:postgresql://", "");
         int query = stripped.indexOf('?');
-        return query == -1 ? stripped : stripped.substring(0, query);
+        String hostAndDb = query == -1 ? stripped : stripped.substring(0, query);
+
+        if (environment.matchesProfiles("local")) {
+            return hostAndDb;
+        }
+        // 호스트는 가리고 DB 이름만 남긴다
+        int slash = hostAndDb.indexOf('/');
+        return slash == -1 ? "(감춤)" : "(감춤)" + hostAndDb.substring(slash);
     }
 
     // ------------------------------------------------------------------

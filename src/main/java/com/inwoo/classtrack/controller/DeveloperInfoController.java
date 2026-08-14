@@ -3,6 +3,7 @@ package com.inwoo.classtrack.controller;
 import com.inwoo.classtrack.dev.ApiDescription;
 
 import com.inwoo.classtrack.config.DeveloperProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,7 @@ import java.util.Map;
  * 개발자 정보. local 프로필에만 값이 있으므로 prod 에서는 404 가 된다.
  * 설정 파일만으로 노출 여부가 갈리는 예시이기도 하다.
  */
+@ConditionalOnProperty(prefix = "app.dev", name = "enabled", havingValue = "true")
 @RestController
 @RequestMapping("/api/developer")
 public class DeveloperInfoController {

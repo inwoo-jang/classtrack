@@ -12,6 +12,7 @@ const entries = ref<LogEntry[]>([])
 const error = ref<string | null>(null)
 const loading = ref(true)
 
+const disabled = ref(false)
 const level = ref<string>('DEBUG')
 const keyword = ref('')
 const following = ref(true)
@@ -28,7 +29,12 @@ async function loadAll() {
     entries.value = fetched
     lastSequence = fetched.length ? Math.max(...fetched.map((e) => e.sequence)) : 0
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : '로그를 불러오지 못했습니다.'
+    if (e instanceof ApiError && e.status === 404) {
+      disabled.value = true
+      following.value = false
+    } else {
+      error.value = e instanceof ApiError ? e.message : '로그를 불러오지 못했습니다.'
+    }
   } finally {
     loading.value = false
   }
@@ -88,7 +94,12 @@ onUnmounted(stopPolling)
 <template>
   <DevTabs />
 
-  <header class="head">
+  <p v-if="disabled" class="notice off">
+    이 환경에서는 로그 보드가 꺼져 있습니다. 스택트레이스와 요청 인자가 담기므로 기본값이
+    <b>꺼짐</b>입니다. 켜려면 서버 환경변수에 <code>DEV_TOOLS_ENABLED=true</code> 를 넣으세요.
+  </p>
+
+  <header v-else class="head">
     <div class="controls">
       <select v-model="level" class="ctl" aria-label="최소 레벨">
         <option v-for="l in LEVELS" :key="l" :value="l">{{ l }}</option>
@@ -104,7 +115,7 @@ onUnmounted(stopPolling)
 
   <p v-if="error" class="err">{{ error }}</p>
 
-  <div class="console">
+  <div v-if="!disabled" class="console">
     <p v-if="loading" class="note">불러오는 중…</p>
     <p v-else-if="!entries.length" class="note">로그 없음</p>
     <pre
@@ -166,6 +177,20 @@ onUnmounted(stopPolling)
 .btn-clear:hover {
   border-color: var(--danger);
   color: var(--danger);
+}
+
+.off {
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.off code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--surface);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
 }
 
 .err {

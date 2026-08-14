@@ -4,6 +4,7 @@ import com.inwoo.classtrack.dev.ApiDescription;
 
 import java.util.List;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.inwoo.classtrack.logging.LogEntry;
 import com.inwoo.classtrack.service.LogService;
 
+/**
+ * 로그 보드. 스택트레이스와 요청 인자가 담기므로 구현 현황과 같은 스위치로 묶는다.
+ */
+@ConditionalOnProperty(prefix = "app.dev", name = "enabled", havingValue = "true")
 @RestController
 @RequestMapping("/api/logs")
 public class LogController {

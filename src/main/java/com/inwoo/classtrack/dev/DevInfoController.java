@@ -1,15 +1,15 @@
 package com.inwoo.classtrack.dev;
 
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 구현 현황 화면용. 내부 구조를 그대로 드러내므로 local 프로필에서만 등록된다.
+ * 구현 현황 화면용. 내부 구조를 드러내므로 app.dev.enabled 가 true 일 때만 등록된다.
  */
-@Profile("local")
+@ConditionalOnProperty(prefix = "app.dev", name = "enabled", havingValue = "true")
 @RestController
 @RequestMapping("/api/dev")
 public class DevInfoController {

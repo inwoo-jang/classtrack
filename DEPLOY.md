@@ -37,6 +37,16 @@ Neon 콘솔에서 비밀번호를 새로 발급받는다. 로컬 `secrets.proper
 
    `SPRING_PROFILES_ACTIVE=prod` 는 `render.yaml` 에 이미 들어 있다.
 
+   선택 사항:
+
+   | 이름 | 값 | 의미 |
+   |---|---|---|
+   | `DEV_TOOLS_ENABLED` | `true` | `/dev` 화면(구현 현황·로그)을 운영에서도 연다 |
+
+   기본값은 `false` 다. 로그에는 스택트레이스와 요청 인자가 담기므로 아무나 볼 수 있게
+   두지 않는 편이 안전하다. 포트폴리오로 보여주고 싶을 때만 켠다.
+   켜더라도 DB 호스트는 가려서 표시한다.
+
    > `PORT` 는 Render 가 자동으로 넣는다(기본 10000). 직접 등록하지 말 것.
 
 4. 배포가 끝나면 `https://classtrack-api.onrender.com` 같은 주소를 받는다
