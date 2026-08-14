@@ -47,7 +47,10 @@ public class AssignmentService {
                 request.dueDate(),
                 request.assignmentMode(),
                 request.requirement(),
-                request.submissionUrls());
+                request.submissionUrls(),
+                request.technologies(),
+                request.featured(),
+                request.teamSize());
 
         Assignment savedAssignment = assignmentRepository.save(assignment);
         publishLinkCheck(savedAssignment);
@@ -71,7 +74,10 @@ public class AssignmentService {
                 request.dueDate(),
                 request.assignmentMode(),
                 request.requirement(),
-                request.submissionUrls());
+                request.submissionUrls(),
+                request.technologies(),
+                request.featured(),
+                request.teamSize());
         assignment.changeStatus(request.status());
         publishLinkCheck(assignment);
 

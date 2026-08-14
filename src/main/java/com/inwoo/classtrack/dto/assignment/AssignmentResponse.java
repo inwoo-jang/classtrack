@@ -19,7 +19,10 @@ public record AssignmentResponse(
         AssignmentRequirement requirement,
         AssignmentStatus status,
         LocalDateTime submittedAt,
-        List<AssignmentLinkResponse> submissionLinks) {
+        List<AssignmentLinkResponse> submissionLinks,
+        List<String> technologies,
+        boolean featured,
+        Integer teamSize) {
     public static AssignmentResponse from(Assignment assignment) {
         return new AssignmentResponse(
                 assignment.getId(),
@@ -34,6 +37,9 @@ public record AssignmentResponse(
                 assignment.getSubmittedAt(),
                 assignment.getSubmissionLinks().stream()
                         .map(AssignmentLinkResponse::from)
-                        .toList());
+                        .toList(),
+                List.copyOf(assignment.getTechnologies()),
+                assignment.isFeatured(),
+                assignment.getTeamSize());
     }
 }

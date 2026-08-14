@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { courseApi, subjectApi } from '@/api/courses'
+import { courseApi, subjectApi, technologyApi } from '@/api/courses'
 import { ApiError } from '@/api/client'
 import StateBlock from '@/components/StateBlock.vue'
 import SubjectSelect from '@/components/SubjectSelect.vue'
+import TagInput from '@/components/TagInput.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -24,9 +25,11 @@ const form = reactive({
   location: '',
   liveLecture: true,
   practiceProfessor: '',
+  technologies: [] as string[],
 })
 
 const subjects = ref<string[]>([])
+const allTechnologies = ref<string[]>([])
 const loading = ref(false)
 const loadError = ref<string | null>(null)
 const submitting = ref(false)
@@ -40,6 +43,7 @@ function message(e: unknown): string {
 onMounted(async () => {
   // 과목 목록은 등록·수정 양쪽에서 필요하다. 실패해도 직접 입력할 수 있으므로 무시한다.
   subjectApi.list().then((list) => (subjects.value = list)).catch(() => {})
+  technologyApi.list().then((list) => (allTechnologies.value = list)).catch(() => {})
 
   if (!isEdit.value) return
 
@@ -55,6 +59,7 @@ onMounted(async () => {
       location: course.location,
       liveLecture: course.liveLecture,
       practiceProfessor: course.practiceProfessor ?? '',
+      technologies: [...course.technologies],
     })
   } catch (e) {
     loadError.value = message(e)
@@ -103,6 +108,7 @@ async function submit() {
     location: form.location,
     liveLecture: form.liveLecture,
     practiceProfessor: form.practiceProfessor.trim() || null,
+    technologies: form.technologies,
   }
 
   try {
@@ -202,6 +208,18 @@ async function submit() {
       <span v-if="practiceProfessorMissing" class="field-error">
         비대면 강의는 실습교수 이름이 필수입니다.
       </span>
+    </div>
+
+    <div class="field span">
+      <label for="course-tech">
+        다룬 기술 <span class="muted">(선택 · 이 강의에서 배운 것)</span>
+      </label>
+      <TagInput
+        id="course-tech"
+        v-model="form.technologies"
+        :options="allTechnologies"
+        placeholder="예: Spring Boot · 입력 후 Enter"
+      />
     </div>
 
     <div class="span actions">

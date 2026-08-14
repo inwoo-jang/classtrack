@@ -5,6 +5,7 @@ import { ApiError } from '@/api/client'
 import type { Assignment, AssignmentStatus } from '@/types/api'
 import { ASSIGNMENT_STATUSES } from '@/types/api'
 import { STATUS_LABEL, daysUntil, isDone } from '@/utils/format'
+import { technologyApi } from '@/api/courses'
 import AssignmentRow from '@/components/AssignmentRow.vue'
 import StateBlock from '@/components/StateBlock.vue'
 
@@ -14,6 +15,8 @@ const error = ref<string | null>(null)
 
 type Filter = 'ALL' | 'OPEN' | AssignmentStatus
 const filter = ref<Filter>('OPEN')
+const featuredOnly = ref(false)
+const allTechnologies = ref<string[]>([])
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'OPEN', label: '남은 과제' },
@@ -33,7 +36,13 @@ const counts = computed(() =>
   ),
 )
 
-const visible = computed(() => assignments.value.filter((a) => matches(a, filter.value)))
+const visible = computed(() =>
+  assignments.value
+    .filter((a) => matches(a, filter.value))
+    .filter((a) => !featuredOnly.value || a.featured),
+)
+
+const featuredCount = computed(() => assignments.value.filter((a) => a.featured).length)
 
 const overdueCount = computed(
   () => assignments.value.filter((a) => a.dueDate && !isDone(a.status) && daysUntil(a.dueDate) < 0).length,
@@ -50,6 +59,8 @@ function onRemoved(id: number) {
 }
 
 onMounted(async () => {
+  technologyApi.list().then((list) => (allTechnologies.value = list)).catch(() => {})
+
   try {
     assignments.value = await assignmentApi.listAll()
   } catch (e) {
@@ -87,6 +98,17 @@ onMounted(async () => {
       {{ f.label }}
       <span class="n">{{ counts[f.key] }}</span>
     </button>
+
+    <button
+      v-if="featuredCount"
+      class="chip star"
+      :class="{ on: featuredOnly }"
+      type="button"
+      @click="featuredOnly = !featuredOnly"
+    >
+      ★ 대표
+      <span class="n">{{ featuredCount }}</span>
+    </button>
   </nav>
 
   <StateBlock
@@ -101,6 +123,7 @@ onMounted(async () => {
           v-for="assignment in visible"
           :key="assignment.id"
           :assignment="assignment"
+          :technology-options="allTechnologies"
           show-course
           @updated="onUpdated"
           @removed="onRemoved"
@@ -159,6 +182,11 @@ onMounted(async () => {
 .chip:hover {
   background: var(--surface);
   border-color: var(--ink-muted);
+}
+
+.chip.star.on {
+  background: var(--mint-deep);
+  border-color: var(--mint-deep);
 }
 
 .chip.on {

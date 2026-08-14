@@ -8,6 +8,10 @@ import java.util.List;
 
 public interface CourseRepository extends JpaRepository<Course, Long> {
 
+    /** 이미 쓰인 기술. 추천 목록에 합쳐 표기 흔들림을 줄인다. */
+    @Query("select distinct t from Course c join c.technologies t order by t")
+    List<String> findDistinctTechnologies();
+
     /** 이미 쓰인 과목명. 설정에 없는 값도 목록에 다시 나타나게 하려고 읽는다. */
     @Query("select distinct c.subject from Course c order by c.subject")
     List<String> findDistinctSubjects();

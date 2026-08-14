@@ -16,6 +16,11 @@ export const dashboardApi = {
   load: () => api.get<Dashboard>('/api/dashboard'),
 }
 
+export const technologyApi = {
+  /** 설정 기본값 + 이미 쓰인 기술 */
+  list: () => api.get<string[]>('/api/technologies'),
+}
+
 export const subjectApi = {
   /** 설정에 정의된 기본 목록 + DB 에 이미 쓰인 과목명 */
   list: () => api.get<string[]>('/api/subjects'),

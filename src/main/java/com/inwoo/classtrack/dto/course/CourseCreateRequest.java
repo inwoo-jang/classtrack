@@ -4,8 +4,10 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public record CourseCreateRequest(
 
@@ -23,7 +25,10 @@ public record CourseCreateRequest(
 
         @NotNull(message = "대면/비대면 여부는 필수입니다.") Boolean liveLecture,
 
-        String practiceProfessor) {
+        String practiceProfessor,
+
+        @Size(max = 30, message = "기술은 최대 30개까지 등록할 수 있습니다.")
+        List<@Size(max = 60, message = "기술명은 60자를 넘을 수 없습니다.") String> technologies) {
 
     /** 비대면 강의는 실습을 맡는 교수가 따로 있으므로 이름을 반드시 받는다. */
     @AssertTrue(message = "비대면 강의는 실습교수 이름이 필수입니다.")

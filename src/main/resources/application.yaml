@@ -61,6 +61,20 @@ app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:}
 
+  # 기술 추천 목록. 여기 없는 것도 자유롭게 입력할 수 있고,
+  # 한 번 쓰인 값은 DB 에서 읽어 자동으로 합쳐진다.
+  technologies:
+    - Java
+    - Spring Boot
+    - Spring Data JPA
+    - PostgreSQL
+    - TypeScript
+    - Vue
+    - Docker
+    - Git
+    - Python
+    - SQL
+
   # 과목 추천 목록. enum 이 아니라 "제안"이므로 여기 없는 값도 입력할 수 있고,
   # 한 번 쓰인 과목명은 DB 에서 읽어 자동으로 목록에 합쳐진다.
   subjects:

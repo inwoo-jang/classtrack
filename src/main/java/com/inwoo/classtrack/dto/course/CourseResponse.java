@@ -5,6 +5,7 @@ import com.inwoo.classtrack.domain.Course;
 import com.inwoo.classtrack.domain.CourseStatus;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public record CourseResponse(
         Long id,
@@ -22,6 +23,7 @@ public record CourseResponse(
         CourseStatus status,
         /** 오늘 기준 몇 일차인지. 시작 전이면 0 */
         int dayIndex,
+        List<String> technologies,
         AssignmentSummary assignments) {
 
     /** 과제가 아직 없는 시점(예: 강의 생성 직후)에 쓴다. */
@@ -52,6 +54,9 @@ public record CourseResponse(
                 course.getPracticeProfessor(),
                 calendar.statusOf(course, today),
                 calendar.dayIndexOf(course, today),
+                // 트랜잭션 안에서 복사한다. 지연 컬렉션을 그대로 넘기면
+                // open-in-view=false 라 직렬화 시점에 세션이 없어 터진다.
+                List.copyOf(course.getTechnologies()),
                 assignments);
     }
 }

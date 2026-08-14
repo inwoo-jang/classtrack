@@ -6,8 +6,16 @@ import type { Assignment, AssignmentMode, AssignmentRequirement, AssignmentStatu
 import { ASSIGNMENT_STATUSES } from '@/types/api'
 import { STATUS_LABEL, deadlineBadge, formatDateTime, isDone } from '@/utils/format'
 import SubmissionLink from './SubmissionLink.vue'
+import TagInput from './TagInput.vue'
 
-const props = defineProps<{ assignment: Assignment; showCourse?: boolean }>()
+const props = defineProps<{
+  assignment: Assignment
+  showCourse?: boolean
+  /** 상위 강의에서 다룬 기술. 편집 시 한 번에 담아올 수 있게 전달한다 (강의 상세에서만 제공) */
+  courseTechnologies?: string[]
+  /** 전체 기술 추천 목록 */
+  technologyOptions?: string[]
+}>()
 const emit = defineEmits<{ updated: [Assignment]; removed: [number] }>()
 
 const badge = computed(() => deadlineBadge(props.assignment))
@@ -20,6 +28,9 @@ const draft = reactive({
   assignmentMode: 'INDIVIDUAL' as AssignmentMode,
   requirement: 'REQUIRED' as AssignmentRequirement,
   submissionUrlsText: '',
+  technologies: [] as string[],
+  featured: false,
+  teamSize: null as number | null,
 })
 
 function openEditor() {
@@ -31,6 +42,9 @@ function openEditor() {
   draft.assignmentMode = a.assignmentMode
   draft.requirement = a.requirement
   draft.submissionUrlsText = a.submissionLinks.map((link) => link.url).join('\n')
+  draft.technologies = [...a.technologies]
+  draft.featured = a.featured
+  draft.teamSize = a.teamSize
   editing.value = true
 }
 
@@ -43,6 +57,10 @@ function body(status: AssignmentStatus) {
     requirement: draft.requirement,
     status,
     submissionUrls: draft.submissionUrlsText.split('\n').map((url) => url.trim()).filter(Boolean),
+    technologies: draft.technologies,
+    featured: draft.featured,
+    // 개인 과제로 바꾸면 서버가 알아서 지우지만, 보내는 값도 맞춰둔다
+    teamSize: draft.assignmentMode === 'TEAM' ? draft.teamSize : null,
   }
 }
 
@@ -66,7 +84,11 @@ function changeStatus(event: Event) {
 }
 
 async function remove() {
-  if (!window.confirm(`"${props.assignment.title}" 과제를 삭제할까요?`)) return
+  // 강의 삭제와 같은 무게로 다룬다 — 되돌릴 수 없다는 점을 분명히 알린다.
+  const message =
+    `"${props.assignment.title}" 과제를 삭제할까요?\n` +
+    '등록한 결과물 링크와 진행 상태가 함께 사라지며 되돌릴 수 없습니다.'
+  if (!window.confirm(message)) return
   saving.value = true
   try {
     await assignmentApi.remove(props.assignment.courseId, props.assignment.id)
@@ -89,13 +111,17 @@ async function remove() {
         <h4 class="name">{{ assignment.title }}</h4>
         <span class="tag">{{ assignment.assignmentMode === 'TEAM' ? '팀' : '개인' }}</span>
         <span class="tag">{{ assignment.requirement === 'REQUIRED' ? '필수' : '자율' }}</span>
+        <span v-if="assignment.featured" class="star" title="대표 과제">★</span>
         <SubmissionLink v-for="link in assignment.submissionLinks" :key="link.url" :url="link.url" :status="link.status" />
         <button class="edit" type="button" @click="openEditor">수정</button>
-        <button class="edit danger" type="button" @click="remove">삭제</button>
       </div>
 
       <RouterLink v-if="showCourse" :to="`/courses/${assignment.courseId}`" class="course">{{ assignment.courseTitle }}</RouterLink>
       <p v-if="assignment.description" class="desc muted">{{ assignment.description }}</p>
+
+      <p v-if="assignment.technologies.length" class="techs">
+        <span v-for="tech in assignment.technologies" :key="tech" class="tech">{{ tech }}</span>
+      </p>
 
       <form v-if="editing" class="editor" @submit.prevent="save(assignment.status, true)">
         <input v-model="draft.title" class="input wide" required placeholder="과제명" />
@@ -107,7 +133,35 @@ async function remove() {
           <label><input v-model="draft.noDueDate" type="checkbox" /> 마감 없음</label>
         </div>
         <textarea v-model="draft.submissionUrlsText" class="input wide" rows="3" placeholder="결과물 링크를 한 줄에 하나씩 입력 (최대 10개)" />
-        <div class="actions"><button class="btn btn-primary btn-sm" :disabled="saving">저장</button><button class="btn btn-ghost btn-sm" type="button" @click="editing = false">취소</button></div>
+
+        <label v-if="draft.assignmentMode === 'TEAM'" class="team">
+          팀 규모
+          <input v-model.number="draft.teamSize" class="input team-size" type="number" min="2" placeholder="명" />
+          <span class="muted">명</span>
+        </label>
+
+        <div class="tech-field">
+          <span class="tech-label muted">이 과제에서 사용한 기술</span>
+          <TagInput
+            v-model="draft.technologies"
+            :options="technologyOptions"
+            :quick-pick="courseTechnologies"
+            placeholder="직접 쓴 기술 · 입력 후 Enter"
+          />
+        </div>
+
+        <label class="featured-toggle">
+          <input v-model="draft.featured" type="checkbox" />
+          <span>대표 과제 — 포트폴리오로 내보낼 때 포함</span>
+        </label>
+        <div class="actions">
+          <button class="btn btn-danger btn-sm" type="button" :disabled="saving" @click="remove">
+            삭제
+          </button>
+          <span class="spacer" />
+          <button class="btn btn-ghost btn-sm" type="button" @click="editing = false">취소</button>
+          <button class="btn btn-primary btn-sm" :disabled="saving">저장</button>
+        </div>
       </form>
       <p v-if="error" class="err">{{ error }}</p>
     </div>

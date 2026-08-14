@@ -3,6 +3,7 @@ package com.inwoo.classtrack.repository;
 import com.inwoo.classtrack.domain.Assignment;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +25,10 @@ public interface AssignmentRepository
     /** 강의 목록 화면의 집계용. 강의마다 따로 조회하지 않도록 한 번에 가져온다. */
     @EntityGraph(attributePaths = "course")
     List<Assignment> findAllByCourseIdIn(List<Long> courseIds);
+
+    /** 이미 쓰인 기술. 추천 목록에 합쳐 표기 흔들림을 줄인다. */
+    @Query("select distinct t from Assignment a join a.technologies t order by t")
+    List<String> findDistinctTechnologies();
 
     /** 강의를 지우기 전에 딸린 과제를 먼저 정리할 때 쓴다. */
     void deleteAllByCourseId(Long courseId);

@@ -52,7 +52,8 @@ public class CourseService {
                 request.durationDays(),
                 request.location(),
                 request.liveLecture(),
-                request.practiceProfessor());
+                request.practiceProfessor(),
+                request.technologies());
 
         Course savedCourse = courseRepository.save(course);
 
@@ -123,7 +124,8 @@ public class CourseService {
                 request.durationDays(),
                 request.location(),
                 request.liveLecture(),
-                request.practiceProfessor());
+                request.practiceProfessor(),
+                request.technologies());
 
         // save() 를 부르지 않는다. 영속 상태 객체라 트랜잭션이 끝날 때
         // 변경 감지(dirty checking)로 UPDATE 가 나간다.

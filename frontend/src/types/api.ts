@@ -31,6 +31,8 @@ export interface Course {
   /** true = 대면 실강, false = 비대면 */
   liveLecture: boolean
   practiceProfessor: string | null
+  /** 이 강의에서 다룬 기술 */
+  technologies: string[]
   status: CourseStatus
   assignments: AssignmentSummary
 }
@@ -45,6 +47,7 @@ export interface CourseCreateRequest {
   location: string
   liveLecture: boolean
   practiceProfessor: string | null
+  technologies: string[]
 }
 
 /** com.inwoo.classtrack.dto.course.CourseUpdateRequest — 생성과 필드가 같다 */
@@ -86,6 +89,12 @@ export interface Assignment {
   submittedAt: string | null
   /** Google Drive / GitHub 등 결과물 링크 */
   submissionLinks: AssignmentLink[]
+  /** 이 과제에서 직접 사용한 기술 (강의의 technologies 와 구분) */
+  technologies: string[]
+  /** 포트폴리오에 내보낼 대표 과제 */
+  featured: boolean
+  /** 팀 과제일 때 팀 인원. 개인 과제면 null */
+  teamSize: number | null
 }
 
 /** com.inwoo.classtrack.dto.assignment.AssignmentCreateRequest */

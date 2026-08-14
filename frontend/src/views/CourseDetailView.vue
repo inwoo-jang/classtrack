@@ -11,6 +11,7 @@ import {
   isDone,
 } from '@/utils/format'
 import { subjectColor } from '@/utils/subjectColor'
+import { technologyApi } from '@/api/courses'
 import AssignmentRow from '@/components/AssignmentRow.vue'
 import ProgressMeter from '@/components/ProgressMeter.vue'
 import StateBlock from '@/components/StateBlock.vue'
@@ -20,6 +21,7 @@ const courseId = Number(route.params.courseId)
 
 const course = ref<Course | null>(null)
 const assignments = ref<Assignment[]>([])
+const allTechnologies = ref<string[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 
@@ -66,6 +68,8 @@ function onRemoved(id: number) {
 }
 
 onMounted(async () => {
+  technologyApi.list().then((list) => (allTechnologies.value = list)).catch(() => {})
+
   try {
     // 두 요청은 서로 의존하지 않으므로 동시에 보낸다.
     const [c, a] = await Promise.all([
@@ -168,6 +172,11 @@ async function addAssignment() {
             </dd>
           </div>
         </dl>
+
+        <div v-if="course.technologies.length" class="course-techs">
+          <span class="techs-label muted">다룬 기술</span>
+          <span v-for="tech in course.technologies" :key="tech" class="tech">{{ tech }}</span>
+        </div>
       </header>
 
       <section class="card panel">
@@ -256,6 +265,8 @@ async function addAssignment() {
             v-for="assignment in assignments"
             :key="assignment.id"
             :assignment="assignment"
+            :course-technologies="course.technologies"
+            :technology-options="allTechnologies"
             @updated="onUpdated"
             @removed="onRemoved"
           />
@@ -384,6 +395,30 @@ async function addAssignment() {
   margin: 4px 0 0;
   font-size: 0.92rem;
   color: var(--ink-soft);
+}
+
+.course-techs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.techs-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  margin-right: 2px;
+}
+
+.tech {
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface-sunken);
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
 }
 
 .panel {

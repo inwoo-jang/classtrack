@@ -12,6 +12,11 @@ const done = computed(() => summary.value.completed)
 
 const color = computed(() => subjectColor(props.course.subject))
 
+/** 카드에는 앞의 몇 개만. 전체는 상세 화면에서 본다. */
+const TECH_LIMIT = 5
+const shownTech = computed(() => props.course.technologies.slice(0, TECH_LIMIT))
+const restTech = computed(() => props.course.technologies.length - shownTech.value.length)
+
 /** 하루짜리면 날짜 하나만. */
 const period = computed(() => {
   const c = props.course
@@ -47,6 +52,11 @@ const people = computed(() => {
       <h3 class="name">{{ course.title }}</h3>
       <span class="days" :style="{ '--c': color }">{{ course.durationDays }} Days</span>
     </div>
+
+    <p v-if="course.technologies.length" class="techs">
+      <span v-for="tech in shownTech" :key="tech" class="tech">{{ tech }}</span>
+      <span v-if="restTech > 0" class="tech more">+{{ restTech }}</span>
+    </p>
 
     <p class="people">{{ people }}</p>
     <p class="when">{{ period }} · {{ roomOf(course.location) }}</p>
@@ -195,10 +205,34 @@ const people = computed(() => {
   white-space: nowrap;
 }
 
+/* ── 기술 칩 ── */
+
+.techs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 11px 0 0;
+}
+
+.tech {
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface-sunken);
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.tech.more {
+  background: transparent;
+  color: var(--ink-muted);
+}
+
 /* ── 정보 두 줄 ── */
 
 .people {
-  margin: 10px 0 0;
+  margin: 9px 0 0;
   font-size: 0.82rem;
   color: var(--ink-soft);
   overflow-wrap: anywhere;
