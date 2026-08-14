@@ -1,0 +1,109 @@
+# 배포 가이드
+
+프론트는 Vercel, 백엔드는 Railway, DB 는 Neon 에 둔다.
+
+```
+Vercel (Vue)  ──HTTPS──→  Railway (Spring Boot)  ──→  Neon (PostgreSQL)
+```
+
+세 곳이 서로의 주소를 알아야 하므로 **순서가 있다.** 백엔드를 먼저 올려 주소를 얻고,
+그 주소로 프론트를 빌드하고, 다시 백엔드에 프론트 주소를 CORS 로 등록한다.
+
+---
+
+## 0. 준비 — DB 비밀번호
+
+Neon 콘솔에서 비밀번호를 새로 발급받는다. 로컬 `secrets.properties` 의 `DB_PASSWORD` 도
+같은 값으로 바꾼다.
+
+## 1. Railway — 백엔드
+
+1. [railway.app](https://railway.app) 가입 → GitHub 연동
+2. **New Project → Deploy from GitHub repo → `classtrack`**
+   - `Dockerfile` 과 `railway.toml` 을 자동으로 감지한다
+3. **Variables** 탭에서 등록:
+
+   | 이름 | 값 |
+   |---|---|
+   | `SPRING_PROFILES_ACTIVE` | `prod` |
+   | `DB_URL` | `secrets.properties` 의 `DB_URL` |
+   | `DB_USERNAME` | `secrets.properties` 의 `DB_USERNAME` |
+   | `DB_PASSWORD` | 0번에서 새로 발급한 값 |
+
+   > `PORT` 는 Railway 가 자동으로 넣는다. 직접 등록하지 말 것.
+
+4. **Settings → Networking → Generate Domain**
+   → `https://classtrack-production-xxxx.up.railway.app` 같은 주소를 받는다
+5. 확인: `<주소>/actuator/health` 가 `{"status":"UP"}` 을 돌려주면 성공
+
+## 2. Vercel — 프론트
+
+1. [vercel.com](https://vercel.com) 가입 → GitHub 연동
+2. **Add New → Project → `classtrack`** 선택
+3. 설정에서 **Root Directory 를 `frontend` 로 지정** (중요 — 기본값이면 빌드가 실패한다)
+4. **Environment Variables** 에 등록:
+
+   | 이름 | 값 |
+   |---|---|
+   | `VITE_API_BASE_URL` | 1-4 에서 받은 Railway 주소 (끝에 `/` 없이) |
+
+5. Deploy → `https://classtrack.vercel.app` 같은 주소를 받는다
+
+## 3. 다시 Railway — CORS 등록
+
+프론트와 API 의 출처가 다르므로, 백엔드가 프론트 주소를 허용해야 한다.
+Railway **Variables** 에 하나 더 추가한다:
+
+| 이름 | 값 |
+|---|---|
+| `CORS_ALLOWED_ORIGINS` | `https://classtrack.vercel.app,https://classtrack-*.vercel.app` |
+
+두 번째 항목은 Vercel 이 커밋마다 만드는 미리보기 도메인용 와일드카드다.
+저장하면 Railway 가 자동으로 재배포한다.
+
+---
+
+## 확인
+
+| 확인할 것 | 기대 |
+|---|---|
+| `<railway>/actuator/health` | `{"status":"UP"}` |
+| `<railway>/api/courses` | JSON 배열 |
+| `<railway>/api/dev/overview` | **404** (prod 에서는 막힘) |
+| `<vercel>` 접속 | 대시보드가 뜨고 데이터가 보임 |
+| `<vercel>/courses/1` 로 새로고침 | 404 가 아니라 화면이 뜸 |
+| 강의 등록·수정 | 저장됨 (CORS 통과) |
+
+### 자주 나는 문제
+
+**화면은 뜨는데 데이터가 안 나온다**
+브라우저 콘솔에 `blocked by CORS policy` 가 있는지 본다. 3번을 안 했거나
+`CORS_ALLOWED_ORIGINS` 의 주소에 오타·끝 슬래시가 있는 경우다.
+
+**조회는 되는데 저장이 안 된다**
+`PATCH`·`PUT`·`DELETE` 는 브라우저가 `OPTIONS` 로 먼저 물어본다(preflight).
+Network 탭에서 `OPTIONS` 요청이 403 이면 CORS 설정 문제다.
+
+**Railway 배포가 실패한다**
+Deploy Logs 에서 `APPLICATION FAILED TO START` 블록을 찾는다.
+`ddl-auto: validate` 라 DB 스키마가 엔티티와 다르면 뜨지 않는다.
+
+**Vercel 빌드가 실패한다**
+Root Directory 가 `frontend` 인지 확인한다.
+
+---
+
+## 로컬에서 배포본과 같은 조건으로 실행하기
+
+```bash
+cd frontend && npm run build && cd ..
+rm -rf src/main/resources/static && mkdir -p src/main/resources/static
+cp -R frontend/dist/. src/main/resources/static/
+./mvnw -q clean package -DskipTests
+
+SPRING_PROFILES_ACTIVE=prod PORT=9099 \
+  DB_URL=... DB_USERNAME=... DB_PASSWORD=... \
+  java -jar target/classtrack-0.0.1-SNAPSHOT.jar
+```
+
+이 경우 프론트가 같은 서버에서 서빙되므로 CORS 없이 동작한다.

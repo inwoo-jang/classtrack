@@ -37,6 +37,11 @@ Spring Boot 백엔드와 Vue 프론트엔드로 이루어져 있다.
 **구현 현황 자동 수집** — `/dev` 화면의 표는 손으로 관리하지 않는다.
 Spring 의 핸들러 매핑과 JPA Metamodel 을 읽어 만들기 때문에 코드를 고치면 그대로 반영된다.
 
+## 배포
+
+Vercel(프론트) + Railway(백엔드) + Neon(DB) 구성.
+순서와 환경변수는 [DEPLOY.md](DEPLOY.md) 참고.
+
 ## 실행
 
 ### 1. 크리덴셜 설정
