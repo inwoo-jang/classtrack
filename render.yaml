@@ -17,6 +17,12 @@ services:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
 
+      # /dev 화면(구현 현황·로그)을 운영에서도 연다.
+      # 포트폴리오로 보여주기 위한 선택이며, 로그에 스택트레이스와 요청 인자가
+      # 공개된다는 점을 감수한 것이다. DB 호스트는 코드에서 가려 표시한다.
+      - key: DEV_TOOLS_ENABLED
+        value: "true"
+
       # 아래 넷은 대시보드에서 입력한다 (저장소에 담지 않음)
       - key: DB_URL
         sync: false
